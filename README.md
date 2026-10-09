@@ -2,7 +2,13 @@
 
 An interactive, local-first web application to visualize, analyze, and track your Costco shopping history, spending trends, price inflation, and store breakdown.
 
-![Costco Dashboard](https://img.shields.gradient.is/Costco-Dashboard-v2.0)
+## Screenshots
+
+Demo data loaded:
+
+![Dashboard overview](screenshots/dashboard-overview.jpg)
+![Spending analytics](screenshots/dashboard-analytics.jpg)
+![Item explorer](screenshots/item-explorer.jpg)
 
 ## Features
 
