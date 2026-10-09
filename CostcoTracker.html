@@ -1,0 +1,1718 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <title>Costco Receipt Analytics & Spending Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Personal analytics dashboard for visualizing Costco receipts, inflation trends, and spending history." />
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --card-border: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --accent-soft: #eff6ff;
+      --accent-glow: rgba(37, 99, 235, 0.15);
+      --costco-red: #e11d48;
+      --costco-red-soft: #ffe4e6;
+      --costco-blue: #0284c7;
+      --success: #16a34a;
+      --success-soft: #dcfce7;
+      --danger: #dc2626;
+      --danger-soft: #fee2e2;
+      --warning: #d97706;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+      --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 20px;
+      --radius-full: 9999px;
+      --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    [data-theme="dark"] {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #3b82f6;
+      --accent-hover: #60a5fa;
+      --accent-soft: rgba(59, 130, 246, 0.15);
+      --accent-glow: rgba(59, 130, 246, 0.25);
+      --costco-red: #f43f5e;
+      --costco-red-soft: rgba(244, 63, 94, 0.15);
+      --costco-blue: #38bdf8;
+      --success: #22c55e;
+      --success-soft: rgba(34, 197, 94, 0.15);
+      --danger: #ef4444;
+      --danger-soft: rgba(239, 68, 68, 0.15);
+      --warning: #f59e0b;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+      --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      line-height: 1.5;
+      transition: background-color 0.3s ease, color 0.3s ease;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 24px 20px 80px;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 28px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-logo {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, var(--costco-red), #be123c);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 800;
+      box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);
+    }
+
+    .brand-text h1 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, var(--text-main), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-text p {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 16px;
+      border-radius: var(--radius-full);
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: var(--transition);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #ffffff;
+      box-shadow: 0 2px 8px var(--accent-glow);
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: var(--card-bg);
+      color: var(--text-main);
+      border-color: var(--card-border);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-secondary:hover {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .theme-toggle {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-full);
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.1rem;
+      transition: var(--transition);
+    }
+
+    .theme-toggle:hover {
+      transform: rotate(15deg);
+      border-color: var(--accent);
+    }
+
+    /* Upload & Controls Banner */
+    .banner-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+      margin-bottom: 28px;
+    }
+
+    .dropzone-card {
+      background: var(--card-bg);
+      border: 2px dashed var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .dropzone-card:hover, .dropzone-card.drag-over {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      transform: scale(1.005);
+    }
+
+    .dropzone-card input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .dropzone-icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    .dropzone-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .dropzone-subtitle {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Search & Filter Bar */
+    .controls-bar {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: 16px 20px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 240px;
+      position: relative;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 10px 16px 10px 40px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--card-border);
+      background: var(--bg);
+      color: var(--text-main);
+      font-size: 0.875rem;
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .search-box input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .filter-group label {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .select-input {
+      padding: 8px 14px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--card-border);
+      background: var(--bg);
+      color: var(--text-main);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      outline: none;
+      cursor: pointer;
+    }
+
+    /* Summary Grid */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .summary-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      padding: 18px 20px;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      overflow: hidden;
+      transition: var(--transition);
+    }
+
+    .summary-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--accent);
+    }
+
+    .summary-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--accent);
+    }
+
+    .summary-card.accent-red::before { background: var(--costco-red); }
+    .summary-card.accent-green::before { background: var(--success); }
+    .summary-card.accent-blue::before { background: var(--costco-blue); }
+
+    .summary-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+
+    .summary-value {
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-top: 6px;
+      color: var(--text-main);
+    }
+
+    .summary-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Analytics Grid Layout */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+      gap: 24px;
+      margin-bottom: 28px;
+    }
+
+    @media (max-width: 480px) {
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Card Component */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text-main);
+    }
+
+    .card-title .icon {
+      font-size: 1.25rem;
+    }
+
+    .card-subtitle {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Tables */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8125rem;
+    }
+
+    th {
+      background: var(--bg);
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--card-border);
+      user-select: none;
+    }
+
+    th.sortable {
+      cursor: pointer;
+    }
+
+    th.sortable:hover {
+      color: var(--accent);
+    }
+
+    td {
+      padding: 12px;
+      border-bottom: 1px solid var(--card-border);
+      color: var(--text-main);
+    }
+
+    tbody tr {
+      transition: var(--transition);
+      cursor: pointer;
+    }
+
+    tbody tr:hover {
+      background-color: var(--accent-soft);
+    }
+
+    .money {
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 8px;
+      border-radius: var(--radius-full);
+      font-size: 0.7rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .badge-danger {
+      background: var(--danger-soft);
+      color: var(--danger);
+    }
+
+    .badge-success {
+      background: var(--success-soft);
+      color: var(--success);
+    }
+
+    .badge-neutral {
+      background: var(--card-border);
+      color: var(--text-muted);
+    }
+
+    .item-name {
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .item-code {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* Chart wrappers */
+    .chart-container {
+      position: relative;
+      height: 320px;
+      width: 100%;
+      margin-top: 12px;
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-backdrop.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 760px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-lg);
+      padding: 28px;
+      transform: scale(0.95);
+      transition: transform 0.2s ease;
+    }
+
+    .modal-backdrop.active .modal {
+      transform: scale(1);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px;
+      line-height: 1;
+    }
+
+    .modal-close:hover {
+      color: var(--text-main);
+    }
+
+    .modal-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .modal-stat-card {
+      background: var(--bg);
+      padding: 12px 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--card-border);
+    }
+
+    .modal-stat-card .lbl {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .modal-stat-card .val {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      margin-top: 48px;
+      color: var(--text-muted);
+      font-size: 0.8125rem;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="brand">
+        <div class="brand-logo">C</div>
+        <div class="brand-text">
+          <h1>Costco Receipt Dashboard</h1>
+          <p>Personal analytics, spending trends, and inflation tracking</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="demoBtn" class="btn btn-secondary" title="Load sample receipts for demo">
+          <span>✨</span> Load Demo Data
+        </button>
+        <button id="exportCsvBtn" class="btn btn-secondary" title="Export item data to CSV">
+          <span>📥</span> Export CSV
+        </button>
+        <button id="themeToggle" class="theme-toggle" title="Toggle theme">
+          🌙
+        </button>
+      </div>
+    </header>
+
+    <!-- Upload Dropzone & Controls -->
+    <div class="banner-grid">
+      <div class="dropzone-card" id="dropzone">
+        <input type="file" id="fileInput" accept="application/json,.json" />
+        <div class="dropzone-icon">🧾</div>
+        <div class="dropzone-title">Drop your <code>costco-receipts.json</code> file here</div>
+        <div class="dropzone-subtitle">or click to browse your computer. All processing stays local in your browser.</div>
+        <div id="statusText" class="dropzone-subtitle" style="margin-top: 8px; font-weight: 600; color: var(--accent);">
+          No file loaded yet.
+        </div>
+      </div>
+    </div>
+
+    <!-- Search & Filters -->
+    <div class="controls-bar">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="Search items by description or item number..." />
+      </div>
+      <div class="filter-group">
+        <label for="timeRangeSelect">Time Period:</label>
+        <select id="timeRangeSelect" class="select-input">
+          <option value="all">All Time</option>
+          <option value="last6m">Last 6 Months</option>
+          <option value="last1y">Last 1 Year</option>
+          <option value="2026">2026</option>
+          <option value="2025">2025</option>
+          <option value="2024">2024</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Key Metrics Grid -->
+    <section class="summary-grid">
+      <div class="summary-card accent-blue">
+        <div class="summary-label">Total Spent</div>
+        <div class="summary-value" id="statTotalSpent">$0.00</div>
+        <div class="summary-sub">Grand total (incl. tax)</div>
+      </div>
+      <div class="summary-card accent-green">
+        <div class="summary-label">Shopping Trips</div>
+        <div class="summary-value" id="statReceiptsCount">0</div>
+        <div class="summary-sub">Receipts processed</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Total Units</div>
+        <div class="summary-value" id="statTotalUnits">0</div>
+        <div class="summary-sub">Items purchased</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Unique Items</div>
+        <div class="summary-value" id="statUniqueItems">0</div>
+        <div class="summary-sub">Distinct SKUs</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Avg Per Trip</div>
+        <div class="summary-value" id="statAvgPerTrip">$0.00</div>
+        <div class="summary-sub">Spend per shopping trip</div>
+      </div>
+      <div class="summary-card accent-red">
+        <div class="summary-label">Avg Unit Price</div>
+        <div class="summary-value" id="statAvgUnitPrice">$0.00</div>
+        <div class="summary-sub">Average per item unit</div>
+      </div>
+    </section>
+
+    <!-- Top Tables Grid 1 -->
+    <div class="grid-2">
+      <!-- Most Total Spent -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title"><span class="icon">💰</span> Most Spent Items</div>
+            <div class="card-subtitle">Highest total spend overall</div>
+          </div>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Item</th>
+                <th style="text-align:right">Spent</th>
+                <th style="text-align:right">Units</th>
+                <th style="text-align:right">Avg Price</th>
+              </tr>
+            </thead>
+            <tbody id="topSpentTbody">
+              <tr><td colspan="5" class="empty-state">Upload JSON or click "Load Demo Data"</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Price Increases / Inflation -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title"><span class="icon">📈</span> Price Inflation & Increases</div>
+            <div class="card-subtitle">Items with largest price increases over time</div>
+          </div>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Item</th>
+                <th style="text-align:right">Start → Latest</th>
+                <th style="text-align:right">Change</th>
+                <th style="text-align:right">% Inc</th>
+              </tr>
+            </thead>
+            <tbody id="priceIncTbody">
+              <tr><td colspan="5" class="empty-state">Upload JSON or click "Load Demo Data"</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Tables Grid 2 -->
+    <div class="grid-2">
+      <!-- Most Frequently Purchased -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title"><span class="icon">🔥</span> Most Purchased Items</div>
+            <div class="card-subtitle">Ranked by total quantity bought</div>
+          </div>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Item</th>
+                <th style="text-align:right">Units</th>
+                <th style="text-align:right">Trips</th>
+                <th style="text-align:right">Avg Price</th>
+              </tr>
+            </thead>
+            <tbody id="mostPurchasedTbody">
+              <tr><td colspan="5" class="empty-state">Upload JSON or click "Load Demo Data"</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Most Expensive Single Units -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title"><span class="icon">💎</span> Premium Items</div>
+            <div class="card-subtitle">Highest average price per unit (min 2 purchases)</div>
+          </div>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Item</th>
+                <th style="text-align:right">Avg Price</th>
+                <th style="text-align:right">Max Price</th>
+                <th style="text-align:right">Units</th>
+              </tr>
+            </thead>
+            <tbody id="mostExpensiveTbody">
+              <tr><td colspan="5" class="empty-state">Upload JSON or click "Load Demo Data"</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="grid-2" style="margin-bottom: 28px;">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title"><span class="icon">📊</span> Monthly Spending Trend</div>
+            <div class="card-subtitle">Total expenditure grouped by month</div>
+          </div>
+        </div>
+        <div class="chart-container">
+          <canvas id="monthlyChart"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title"><span class="icon">🏪</span> Store Warehouse Breakdown</div>
+            <div class="card-subtitle">Spending distribution across Costco locations</div>
+          </div>
+        </div>
+        <div class="chart-container">
+          <canvas id="warehouseChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- NEW SECTION: All Items Directory & Price Graph Explorer -->
+    <div class="card" style="margin-bottom: 28px;">
+      <div class="card-header" style="flex-wrap: wrap; gap: 14px;">
+        <div>
+          <div class="card-title"><span class="icon">📦</span> All Items Directory & Price Explorer</div>
+          <div class="card-subtitle" id="allItemsSubtitle">Browse every item purchased, sort, search, and click to view price graphs</div>
+        </div>
+        <div class="filter-group">
+          <input type="text" id="allItemsSearchInput" class="select-input" placeholder="Search all items..." style="min-width: 180px; padding: 6px 12px;" />
+          <label for="allItemsSortSelect">Sort By:</label>
+          <select id="allItemsSortSelect" class="select-input">
+            <option value="totalSpent" selected>Total Spent (High → Low)</option>
+            <option value="priceIncPct">Price Increase % (High → Low)</option>
+            <option value="totalUnits">Units Purchased (High → Low)</option>
+            <option value="trips">Shopping Trips (High → Low)</option>
+            <option value="avgPrice">Average Price (High → Low)</option>
+            <option value="name">Item Name (A → Z)</option>
+          </select>
+          <select id="allItemsPageSizeSelect" class="select-input">
+            <option value="15">15 / page</option>
+            <option value="30" selected>30 / page</option>
+            <option value="50">50 / page</option>
+            <option value="100">100 / page</option>
+            <option value="all">All items</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Item</th>
+              <th style="text-align:right">Total Spent</th>
+              <th style="text-align:right">Units</th>
+              <th style="text-align:right">Trips</th>
+              <th style="text-align:right">Avg Price</th>
+              <th style="text-align:right">Start → Latest</th>
+              <th style="text-align:right">Price Change</th>
+              <th style="text-align:center">Price Graph</th>
+            </tr>
+          </thead>
+          <tbody id="allItemsTbody">
+            <tr><td colspan="9" class="empty-state">Upload JSON or click "Load Demo Data"</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="allItemsPagination" style="display: flex; align-items: center; justify-content: space-between; margin-top: 16px; font-size: 0.8125rem; color: var(--text-muted);">
+        <div id="allItemsPageInfo">Showing 0-0 of 0 items</div>
+        <div style="display: flex; gap: 8px;">
+          <button id="prevPageBtn" class="btn btn-secondary" style="padding: 4px 12px; font-size: 0.75rem;">← Prev</button>
+          <button id="nextPageBtn" class="btn btn-secondary" style="padding: 4px 12px; font-size: 0.75rem;">Next →</button>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      Local-first Costco Receipt Analytics Dashboard • Data processed entirely in your browser.
+    </footer>
+  </div>
+
+  <!-- Item Detail Modal -->
+  <div class="modal-backdrop" id="itemModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <h2 id="modalItemTitle" style="font-size: 1.3rem; font-weight: 700;">Item Details</h2>
+          <div id="modalItemSubtitle" class="item-code">#000000</div>
+        </div>
+        <button class="modal-close" id="modalCloseBtn">&times;</button>
+      </div>
+      <div class="modal-stats">
+        <div class="modal-stat-card">
+          <div class="lbl">Total Spent</div>
+          <div class="val" id="modalStatSpent">$0.00</div>
+        </div>
+        <div class="modal-stat-card">
+          <div class="lbl">Units Bought</div>
+          <div class="val" id="modalStatUnits">0</div>
+        </div>
+        <div class="modal-stat-card">
+          <div class="lbl">Trips</div>
+          <div class="val" id="modalStatTrips">0</div>
+        </div>
+        <div class="modal-stat-card">
+          <div class="lbl">Price Range</div>
+          <div class="val" id="modalStatPriceRange">$0 - $0</div>
+        </div>
+      </div>
+      <div style="margin-bottom: 20px;">
+        <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 8px;">Price History Trend</h4>
+        <div style="height: 200px; position: relative;">
+          <canvas id="modalPriceChart"></canvas>
+        </div>
+      </div>
+      <div>
+        <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 8px;">Purchase Records</h4>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Warehouse</th>
+                <th style="text-align:right">Unit Price</th>
+                <th style="text-align:right">Qty</th>
+                <th style="text-align:right">Amount</th>
+              </tr>
+            </thead>
+            <tbody id="modalPurchasesTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // System State & Helpers
+    let rawReceiptsData = [];
+    let processedItemStats = new Map();
+    let monthlyChartInstance = null;
+    let warehouseChartInstance = null;
+    let modalChartInstance = null;
+    let allItemsCurrentPage = 1;
+
+    const currencyFmt = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+
+    function formatMoney(val) {
+      return currencyFmt.format(val || 0);
+    }
+
+    function parseDate(dateInput) {
+      if (!dateInput) return new Date();
+      if (dateInput instanceof Date && !isNaN(dateInput)) return dateInput;
+      
+      const d = new Date(dateInput);
+      if (!isNaN(d.getTime())) return d;
+      
+      if (typeof dateInput === 'string' && dateInput.includes('/')) {
+        const parts = dateInput.split('/');
+        if (parts.length === 3) {
+          const month = parseInt(parts[0], 10) - 1;
+          const day = parseInt(parts[1], 10);
+          let year = parseInt(parts[2], 10);
+          if (year < 100) year += 2000;
+          const parsed = new Date(year, month, day);
+          if (!isNaN(parsed.getTime())) return parsed;
+        }
+      }
+      return new Date();
+    }
+
+    function getMonthKey(dateObj) {
+      const yyyy = dateObj.getFullYear();
+      const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+      return `${yyyy}-${mm}`;
+    }
+
+    function formatMonthLabel(monthKey) {
+      const [yyyy, mm] = monthKey.split('-');
+      const d = new Date(parseInt(yyyy, 10), parseInt(mm, 10) - 1, 1);
+      return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    }
+
+    // Processing Logic
+    function processReceipts(receipts, timeRangeFilter = 'all', searchQuery = '') {
+      const itemStats = new Map();
+      const monthlyTotals = new Map();
+      const warehouseTotals = new Map();
+
+      let totalSpent = 0;
+      let totalUnits = 0;
+      let receiptsCount = 0;
+
+      const query = searchQuery.trim().toLowerCase();
+      const now = new Date();
+
+      receipts.forEach((receipt) => {
+        const rawDateStr = receipt.transactionDateTime || receipt.transactionDate;
+        const trxDate = parseDate(rawDateStr);
+        
+        // Time range filtering
+        if (timeRangeFilter === 'last6m') {
+          const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+          if (trxDate < sixMonthsAgo) return;
+        } else if (timeRangeFilter === 'last1y') {
+          const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+          if (trxDate < oneYearAgo) return;
+        } else if (['2024', '2025', '2026'].includes(timeRangeFilter)) {
+          if (trxDate.getFullYear().toString() !== timeRangeFilter) return;
+        }
+
+        receiptsCount++;
+        const receiptTotal = Number(receipt.total) || 0;
+        totalSpent += receiptTotal;
+
+        // Warehouse totals
+        const whName = receipt.warehouseName || receipt.warehouseShortName || 'Costco Warehouse';
+        warehouseTotals.set(whName, (warehouseTotals.get(whName) || 0) + receiptTotal);
+
+        // Monthly totals
+        const monthKey = getMonthKey(trxDate);
+        monthlyTotals.set(monthKey, (monthlyTotals.get(monthKey) || 0) + receiptTotal);
+
+        const items = Array.isArray(receipt.itemArray) ? receipt.itemArray : [];
+        items.forEach((item) => {
+          const unit = Number(item.unit) || 0;
+          const amount = Number(item.amount) || 0;
+          const itemNum = String(item.itemNumber || '').trim();
+          const name = (item.itemDescription01 || item.itemDescription02 || '').trim();
+
+          // Skip coupon/discount lines, zero units, or deposits
+          if (!itemNum || unit <= 0 || amount <= 0) return;
+
+          // Search query filter
+          if (query && !name.toLowerCase().includes(query) && !itemNum.toLowerCase().includes(query)) {
+            return;
+          }
+
+          const unitPrice = amount / unit;
+          const key = `${itemNum}|${name}`;
+
+          let stat = itemStats.get(key);
+          if (!stat) {
+            stat = {
+              key,
+              itemNumber: itemNum,
+              name,
+              totalSpent: 0,
+              totalUnits: 0,
+              trips: 0,
+              purchases: [] // list of { date, warehouse, unitPrice, unit, amount }
+            };
+            itemStats.set(key, stat);
+          }
+
+          stat.totalSpent += amount;
+          stat.totalUnits += unit;
+          stat.trips += 1;
+          stat.purchases.push({
+            date: trxDate,
+            warehouse: whName,
+            unitPrice,
+            unit,
+            amount
+          });
+
+          totalUnits += unit;
+        });
+      });
+
+      // Post-process item price movements sorted chronologically
+      itemStats.forEach((stat) => {
+        stat.purchases.sort((a, b) => a.date - b.date);
+        stat.firstPrice = stat.purchases[0].unitPrice;
+        stat.latestPrice = stat.purchases[stat.purchases.length - 1].unitPrice;
+        stat.priceDiff = stat.latestPrice - stat.firstPrice;
+        stat.priceDiffPct = stat.firstPrice > 0 ? (stat.priceDiff / stat.firstPrice) * 100 : 0;
+        
+        let minP = Infinity, maxP = -Infinity;
+        stat.purchases.forEach(p => {
+          if (p.unitPrice < minP) minP = p.unitPrice;
+          if (p.unitPrice > maxP) maxP = p.unitPrice;
+        });
+        stat.minPrice = minP;
+        stat.maxPrice = maxP;
+        stat.avgPrice = stat.totalSpent / stat.totalUnits;
+      });
+
+      return {
+        itemStats,
+        monthlyTotals,
+        warehouseTotals,
+        summary: {
+          totalSpent,
+          totalUnits,
+          receiptsCount,
+          uniqueItems: itemStats.size,
+          avgPerTrip: receiptsCount > 0 ? totalSpent / receiptsCount : 0,
+          avgUnitPrice: totalUnits > 0 ? totalSpent / totalUnits : 0
+        }
+      };
+    }
+
+    // Render Dashboard
+    function renderDashboard() {
+      const timeFilter = document.getElementById('timeRangeSelect').value;
+      const searchQuery = document.getElementById('searchInput').value;
+
+      const { itemStats, monthlyTotals, warehouseTotals, summary } = processReceipts(
+        rawReceiptsData,
+        timeFilter,
+        searchQuery
+      );
+
+      processedItemStats = itemStats;
+
+      // Update Summary Cards
+      document.getElementById('statTotalSpent').textContent = formatMoney(summary.totalSpent);
+      document.getElementById('statReceiptsCount').textContent = summary.receiptsCount.toLocaleString();
+      document.getElementById('statTotalUnits').textContent = summary.totalUnits.toLocaleString();
+      document.getElementById('statUniqueItems').textContent = summary.uniqueItems.toLocaleString();
+      document.getElementById('statAvgPerTrip').textContent = formatMoney(summary.avgPerTrip);
+      document.getElementById('statAvgUnitPrice').textContent = formatMoney(summary.avgUnitPrice);
+
+      // Render Tables
+      renderMostSpentTable(itemStats);
+      renderPriceIncreaseTable(itemStats);
+      renderMostPurchasedTable(itemStats);
+      renderMostExpensiveTable(itemStats);
+
+      // Render All Items Explorer
+      renderAllItemsTable(itemStats);
+
+      // Render Charts
+      renderMonthlyChart(monthlyTotals);
+      renderWarehouseChart(warehouseTotals);
+    }
+
+    function createRow(rank, item, col3Html, col4Html, col5Html) {
+      const tr = document.createElement('tr');
+      tr.onclick = () => openItemModal(item.key);
+      tr.innerHTML = `
+        <td style="color:var(--text-muted); font-weight:600;">${rank}</td>
+        <td>
+          <div class="item-name">${escapeHtml(item.name)}</div>
+          <div class="item-code">#${escapeHtml(item.itemNumber)}</div>
+        </td>
+        <td style="text-align:right;">${col3Html}</td>
+        <td style="text-align:right;">${col4Html}</td>
+        <td style="text-align:right;">${col5Html}</td>
+      `;
+      return tr;
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function renderMostSpentTable(itemStats) {
+      const tbody = document.getElementById('topSpentTbody');
+      tbody.innerHTML = '';
+      const items = Array.from(itemStats.values())
+        .sort((a, b) => b.totalSpent - a.totalSpent)
+        .slice(0, 8);
+
+      if (items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No matching items found.</td></tr>';
+        return;
+      }
+
+      items.forEach((item, idx) => {
+        tbody.appendChild(createRow(
+          idx + 1,
+          item,
+          `<span class="money">${formatMoney(item.totalSpent)}</span>`,
+          `${item.totalUnits} unit${item.totalUnits > 1 ? 's' : ''}`,
+          `<span class="money">${formatMoney(item.avgPrice)}</span>`
+        ));
+      });
+    }
+
+    function renderPriceIncreaseTable(itemStats) {
+      const tbody = document.getElementById('priceIncTbody');
+      tbody.innerHTML = '';
+
+      const items = Array.from(itemStats.values())
+        .filter(s => s.purchases.length >= 2 && s.priceDiff > 0.05)
+        .sort((a, b) => b.priceDiffPct - a.priceDiffPct)
+        .slice(0, 8);
+
+      if (items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No price increases recorded.</td></tr>';
+        return;
+      }
+
+      items.forEach((item, idx) => {
+        const badgeClass = item.priceDiffPct > 15 ? 'badge-danger' : 'badge-neutral';
+        tbody.appendChild(createRow(
+          idx + 1,
+          item,
+          `<span class="money">${formatMoney(item.firstPrice)} → ${formatMoney(item.latestPrice)}</span>`,
+          `<span class="money" style="color:var(--danger)">+${formatMoney(item.priceDiff)}</span>`,
+          `<span class="badge ${badgeClass}">+${item.priceDiffPct.toFixed(1)}%</span>`
+        ));
+      });
+    }
+
+    function renderMostPurchasedTable(itemStats) {
+      const tbody = document.getElementById('mostPurchasedTbody');
+      tbody.innerHTML = '';
+      const items = Array.from(itemStats.values())
+        .sort((a, b) => b.totalUnits - a.totalUnits)
+        .slice(0, 8);
+
+      if (items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No matching items found.</td></tr>';
+        return;
+      }
+
+      items.forEach((item, idx) => {
+        tbody.appendChild(createRow(
+          idx + 1,
+          item,
+          `<strong>${item.totalUnits}</strong>`,
+          `${item.trips} trip${item.trips > 1 ? 's' : ''}`,
+          `<span class="money">${formatMoney(item.avgPrice)}</span>`
+        ));
+      });
+    }
+
+    function renderMostExpensiveTable(itemStats) {
+      const tbody = document.getElementById('mostExpensiveTbody');
+      tbody.innerHTML = '';
+      const items = Array.from(itemStats.values())
+        .filter(s => s.totalUnits >= 2)
+        .sort((a, b) => b.avgPrice - a.avgPrice)
+        .slice(0, 8);
+
+      if (items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No matching items found.</td></tr>';
+        return;
+      }
+
+      items.forEach((item, idx) => {
+        tbody.appendChild(createRow(
+          idx + 1,
+          item,
+          `<span class="money">${formatMoney(item.avgPrice)}</span>`,
+          `<span class="money">${formatMoney(item.maxPrice)}</span>`,
+          `${item.totalUnits}`
+        ));
+      });
+    }
+
+    // ALL ITEMS DIRECTORY & PRICE GRAPH EXPLORER
+    function renderAllItemsTable(itemStats) {
+      const tbody = document.getElementById('allItemsTbody');
+      tbody.innerHTML = '';
+
+      const localSearch = document.getElementById('allItemsSearchInput').value.trim().toLowerCase();
+      const sortMode = document.getElementById('allItemsSortSelect').value;
+      const pageSizeVal = document.getElementById('allItemsPageSizeSelect').value;
+
+      let items = Array.from(itemStats.values());
+
+      // Filter by local search if provided
+      if (localSearch) {
+        items = items.filter(i => i.name.toLowerCase().includes(localSearch) || i.itemNumber.toLowerCase().includes(localSearch));
+      }
+
+      // Sort items
+      items.sort((a, b) => {
+        if (sortMode === 'totalSpent') return b.totalSpent - a.totalSpent;
+        if (sortMode === 'priceIncPct') return b.priceDiffPct - a.priceDiffPct;
+        if (sortMode === 'totalUnits') return b.totalUnits - a.totalUnits;
+        if (sortMode === 'trips') return b.trips - a.trips;
+        if (sortMode === 'avgPrice') return b.avgPrice - a.avgPrice;
+        if (sortMode === 'name') return a.name.localeCompare(b.name);
+        return 0;
+      });
+
+      const totalItems = items.length;
+      document.getElementById('allItemsSubtitle').textContent = `Showing ${totalItems.toLocaleString()} item${totalItems !== 1 ? 's' : ''} • Click any row to open full price history graph`;
+
+      if (totalItems === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No items match your filters.</td></tr>';
+        document.getElementById('allItemsPageInfo').textContent = 'Showing 0 of 0 items';
+        return;
+      }
+
+      // Pagination calculation
+      const pageSize = pageSizeVal === 'all' ? totalItems : parseInt(pageSizeVal, 10);
+      const totalPages = Math.ceil(totalItems / pageSize);
+      if (allItemsCurrentPage > totalPages) allItemsCurrentPage = totalPages;
+      if (allItemsCurrentPage < 1) allItemsCurrentPage = 1;
+
+      const startIndex = (allItemsCurrentPage - 1) * pageSize;
+      const endIndex = Math.min(startIndex + pageSize, totalItems);
+      const pageItems = items.slice(startIndex, endIndex);
+
+      pageItems.forEach((item, idx) => {
+        const globalRank = startIndex + idx + 1;
+        const tr = document.createElement('tr');
+        tr.onclick = () => openItemModal(item.key);
+
+        let changeBadge = '';
+        if (item.purchases.length < 2 || Math.abs(item.priceDiff) <= 0.01) {
+          changeBadge = `<span class="badge badge-neutral">No Change</span>`;
+        } else if (item.priceDiff > 0) {
+          changeBadge = `<span class="badge badge-danger">+${formatMoney(item.priceDiff)} (+${item.priceDiffPct.toFixed(1)}%)</span>`;
+        } else {
+          changeBadge = `<span class="badge badge-success">${formatMoney(item.priceDiff)} (${item.priceDiffPct.toFixed(1)}%)</span>`;
+        }
+
+        const priceMovementStr = item.purchases.length >= 2 
+          ? `<span class="money">${formatMoney(item.firstPrice)} → ${formatMoney(item.latestPrice)}</span>` 
+          : `<span class="money">${formatMoney(item.firstPrice)}</span>`;
+
+        tr.innerHTML = `
+          <td style="color:var(--text-muted); font-weight:600;">${globalRank}</td>
+          <td>
+            <div class="item-name">${escapeHtml(item.name)}</div>
+            <div class="item-code">#${escapeHtml(item.itemNumber)}</div>
+          </td>
+          <td style="text-align:right;" class="money">${formatMoney(item.totalSpent)}</td>
+          <td style="text-align:right;">${item.totalUnits}</td>
+          <td style="text-align:right;">${item.trips}</td>
+          <td style="text-align:right;" class="money">${formatMoney(item.avgPrice)}</td>
+          <td style="text-align:right;">${priceMovementStr}</td>
+          <td style="text-align:right;">${changeBadge}</td>
+          <td style="text-align:center;">
+            <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.75rem;" onclick="event.stopPropagation(); openItemModal('${escapeHtml(item.key)}')">
+              📊 Graph
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // Pagination Info & Buttons
+      document.getElementById('allItemsPageInfo').textContent = `Showing ${startIndex + 1}-${endIndex} of ${totalItems.toLocaleString()} items`;
+      document.getElementById('prevPageBtn').disabled = allItemsCurrentPage <= 1;
+      document.getElementById('nextPageBtn').disabled = allItemsCurrentPage >= totalPages;
+    }
+
+    // Pagination Listeners
+    document.getElementById('prevPageBtn').addEventListener('click', () => {
+      if (allItemsCurrentPage > 1) {
+        allItemsCurrentPage--;
+        renderAllItemsTable(processedItemStats);
+      }
+    });
+
+    document.getElementById('nextPageBtn').addEventListener('click', () => {
+      allItemsCurrentPage++;
+      renderAllItemsTable(processedItemStats);
+    });
+
+    document.getElementById('allItemsSearchInput').addEventListener('input', () => {
+      allItemsCurrentPage = 1;
+      renderAllItemsTable(processedItemStats);
+    });
+
+    document.getElementById('allItemsSortSelect').addEventListener('change', () => {
+      allItemsCurrentPage = 1;
+      renderAllItemsTable(processedItemStats);
+    });
+
+    document.getElementById('allItemsPageSizeSelect').addEventListener('change', () => {
+      allItemsCurrentPage = 1;
+      renderAllItemsTable(processedItemStats);
+    });
+
+    // Chart Rendering
+    function renderMonthlyChart(monthlyTotals) {
+      const ctx = document.getElementById('monthlyChart').getContext('2d');
+      const sortedKeys = Array.from(monthlyTotals.keys()).sort();
+      const labels = sortedKeys.map(k => formatMonthLabel(k));
+      const data = sortedKeys.map(k => monthlyTotals.get(k));
+
+      if (monthlyChartInstance) monthlyChartInstance.destroy();
+
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+      const textColor = isDark ? '#94a3b8' : '#64748b';
+
+      monthlyChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Total Spent ($)',
+            data,
+            backgroundColor: '#2563eb',
+            borderRadius: 6,
+            hoverBackgroundColor: '#1d4ed8'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: gridColor }, ticks: { color: textColor } },
+            y: { grid: { color: gridColor }, ticks: { color: textColor, callback: v => '$' + v } }
+          }
+        }
+      });
+    }
+
+    function renderWarehouseChart(warehouseTotals) {
+      const ctx = document.getElementById('warehouseChart').getContext('2d');
+      const entries = Array.from(warehouseTotals.entries()).sort((a, b) => b[1] - a[1]);
+      const labels = entries.map(e => e[0]);
+      const data = entries.map(e => e[1]);
+
+      if (warehouseChartInstance) warehouseChartInstance.destroy();
+
+      const colors = ['#2563eb', '#e11d48', '#0284c7', '#16a34a', '#d97706', '#8b5cf6'];
+
+      warehouseChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels,
+          datasets: [{
+            data,
+            backgroundColor: colors,
+            borderWidth: 2,
+            borderColor: document.documentElement.getAttribute('data-theme') === 'dark' ? '#1e293b' : '#ffffff'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#94a3b8' : '#64748b' } }
+          }
+        }
+      });
+    }
+
+    // Modal Display
+    function openItemModal(itemKey) {
+      const item = processedItemStats.get(itemKey);
+      if (!item) return;
+
+      document.getElementById('modalItemTitle').textContent = item.name;
+      document.getElementById('modalItemSubtitle').textContent = `#${item.itemNumber}`;
+      document.getElementById('modalStatSpent').textContent = formatMoney(item.totalSpent);
+      document.getElementById('modalStatUnits').textContent = item.totalUnits;
+      document.getElementById('modalStatTrips').textContent = item.trips;
+      document.getElementById('modalStatPriceRange').textContent = `${formatMoney(item.minPrice)} - ${formatMoney(item.maxPrice)}`;
+
+      // Render Modal Table
+      const tbody = document.getElementById('modalPurchasesTbody');
+      tbody.innerHTML = '';
+      item.purchases.forEach(p => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${p.date.toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' })}</td>
+          <td>${escapeHtml(p.warehouse)}</td>
+          <td style="text-align:right;" class="money">${formatMoney(p.unitPrice)}</td>
+          <td style="text-align:right;">${p.unit}</td>
+          <td style="text-align:right;" class="money">${formatMoney(p.amount)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // Render Modal Line Chart
+      const ctx = document.getElementById('modalPriceChart').getContext('2d');
+      if (modalChartInstance) modalChartInstance.destroy();
+
+      const labels = item.purchases.map(p => p.date.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'2-digit' }));
+      const prices = item.purchases.map(p => p.unitPrice);
+
+      modalChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Unit Price ($)',
+            data: prices,
+            borderColor: '#2563eb',
+            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { ticks: { callback: v => '$' + v } }
+          }
+        }
+      });
+
+      document.getElementById('itemModal').classList.add('active');
+    }
+
+    document.getElementById('modalCloseBtn').onclick = () => {
+      document.getElementById('itemModal').classList.remove('active');
+    };
+    document.getElementById('itemModal').onclick = (e) => {
+      if (e.target === document.getElementById('itemModal')) {
+        document.getElementById('itemModal').classList.remove('active');
+      }
+    };
+
+    // CSV Export
+    document.getElementById('exportCsvBtn').onclick = () => {
+      if (!rawReceiptsData || rawReceiptsData.length === 0) {
+        alert('Please load data first before exporting CSV.');
+        return;
+      }
+
+      let csv = 'Date,Warehouse,ItemNumber,Description,Quantity,UnitPrice,TotalAmount\n';
+
+      rawReceiptsData.forEach(r => {
+        const dateStr = r.transactionDateTime || r.transactionDate || '';
+        const wh = (r.warehouseName || r.warehouseShortName || '').replace(/,/g, ' ');
+        const items = Array.isArray(r.itemArray) ? r.itemArray : [];
+
+        items.forEach(i => {
+          const num = i.itemNumber || '';
+          const desc = (i.itemDescription01 || '').replace(/,/g, ' ');
+          const qty = i.unit || 0;
+          const amt = i.amount || 0;
+          const unitPrice = qty > 0 ? (amt / qty).toFixed(2) : 0;
+          csv += `"${dateStr}","${wh}","${num}","${desc}",${qty},${unitPrice},${amt}\n`;
+        });
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `costco-purchases-export-${new Date().toISOString().slice(0,10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    };
+
+    // File Input & Dropzone
+    const fileInput = document.getElementById('fileInput');
+    const dropzone = document.getElementById('dropzone');
+    const statusText = document.getElementById('statusText');
+
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) handleFile(file);
+    });
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropzone.classList.add('drag-over');
+      }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('drag-over');
+      }, false);
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      const file = e.dataTransfer.files[0];
+      if (file) handleFile(file);
+    });
+
+    function handleFile(file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const json = JSON.parse(event.target.result);
+          if (!Array.isArray(json)) {
+            throw new Error('Expected JSON array of receipts');
+          }
+          rawReceiptsData = json;
+          statusText.textContent = `Loaded ${json.length.toLocaleString()} receipts from file: ${file.name}`;
+          renderDashboard();
+        } catch (err) {
+          alert('Error parsing JSON file: ' + err.message);
+          statusText.textContent = 'Failed to load file.';
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // Interactive Filters
+    document.getElementById('searchInput').addEventListener('input', renderDashboard);
+    document.getElementById('timeRangeSelect').addEventListener('change', renderDashboard);
+
+    // Theme Toggle
+    const themeBtn = document.getElementById('themeToggle');
+    themeBtn.addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      themeBtn.textContent = next === 'dark' ? '☀️' : '🌙';
+      if (rawReceiptsData.length > 0) renderDashboard();
+    });
+
+    // Sample Data Generator
+    document.getElementById('demoBtn').addEventListener('click', () => {
+      rawReceiptsData = generateSampleReceipts();
+      statusText.textContent = ` Loaded ${rawReceiptsData.length} sample Costco receipts (Demo Mode).`;
+      renderDashboard();
+    });
+
+    function generateSampleReceipts() {
+      const warehouses = ['Issaquah #110', 'Seattle #001', 'Bellevue #1145'];
+      const sampleItems = [
+        { num: '845612', name: 'KS Organic Milk 3x64oz', basePrice: 11.99, inc: 1.50 },
+        { num: '14105', name: 'KS Paper Towels 12ct', basePrice: 19.99, inc: 2.50 },
+        { num: '343479', name: 'Rotisserie Chicken', basePrice: 4.99, inc: 0.00 },
+        { num: '777123', name: 'KS Extra Virgin Olive Oil 2L', basePrice: 16.99, inc: 5.00 },
+        { num: '99201', name: 'Organic Cage Free Eggs 24ct', basePrice: 6.49, inc: 1.80 },
+        { num: '556102', name: 'KS Coffee Beans 2.5lb', basePrice: 14.99, inc: 2.00 },
+        { num: '11204', name: 'Organic Bananas 3lb', basePrice: 2.29, inc: 0.30 },
+        { num: '445901', name: 'Prime Ribeye Steak', basePrice: 49.99, inc: 8.00 },
+        { num: '881234', name: 'KS Tissue Box 12 Pack', basePrice: 18.49, inc: 1.20 },
+        { num: '66512', name: 'Chobani Greek Yogurt 16ct', basePrice: 13.99, inc: 1.00 }
+      ];
+
+      const receipts = [];
+      const dates = [
+        '2024-01-15', '2024-03-20', '2024-06-10', '2024-09-05', '2024-11-28',
+        '2025-01-12', '2025-04-18', '2025-07-22', '2025-10-30',
+        '2026-02-14', '2026-05-01', '2026-07-19'
+      ];
+
+      dates.forEach((dateStr, dIdx) => {
+        const wh = warehouses[dIdx % warehouses.length];
+        const numItems = 4 + (dIdx % 4);
+        const itemArray = [];
+        let subTotal = 0;
+
+        for (let i = 0; i < numItems; i++) {
+          const itemDef = sampleItems[(dIdx + i) % sampleItems.length];
+          const priceInflation = (dIdx / dates.length) * itemDef.inc;
+          const unitPrice = parseFloat((itemDef.basePrice + priceInflation).toFixed(2));
+          const unit = (i === 1) ? 2 : 1;
+          const amount = parseFloat((unitPrice * unit).toFixed(2));
+          subTotal += amount;
+
+          itemArray.push({
+            itemNumber: itemDef.num,
+            itemDescription01: itemDef.name,
+            unit,
+            amount
+          });
+        }
+
+        receipts.push({
+          transactionDate: dateStr,
+          transactionDateTime: `${dateStr}T14:30:00`,
+          warehouseName: wh,
+          subTotal: subTotal.toFixed(2),
+          total: (subTotal * 1.09).toFixed(2), // 9% tax
+          itemArray
+        });
+      });
+
+      return receipts;
+    }
+  </script>
+</body>
+</html>
