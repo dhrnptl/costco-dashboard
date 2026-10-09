@@ -6,9 +6,9 @@ An interactive, local-first web application to visualize, analyze, and track you
 
 Demo data loaded:
 
-![Dashboard overview](screenshots/dashboard-overview.jpg)
-![Spending analytics](screenshots/dashboard-analytics.jpg)
-![Item explorer](screenshots/item-explorer.jpg)
+![Dashboard overview](dashboard-overview.png)
+![Spending analytics](dashboard-analytics.png)
+![Item explorer](Item-explorer.png)
 
 ## Features
 
