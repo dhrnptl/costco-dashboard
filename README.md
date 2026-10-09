@@ -43,7 +43,7 @@ Demo data loaded:
 4. Press `Enter` to run the script. By default, it fetches your receipts from the last 2 years and saves a file named `costco-receipts-YYYY-MM-DD.json`.
 
 *(Note: You can pass custom options, e.g. `await downloadReceipts({ yearsBack: 2 });` or specify a custom `startDate: '01/01/2023'`)*
-*(Note: If you have more than 1 members in your Costco household, ensure you download the receipts by logging into both accounts and combine the receipts to see all spending at Costco)*.
+*(Note: If your Costco household has more than 1 member, log into each account separately and download the receipts from both — each account only shows its own card's purchases. Then merge the two JSON files into one (open both in a text editor, delete the final `]` of the first file and the opening `[` of the second, and join them with a comma) and load the combined file into the dashboard.)*
 
 ### Step 2: Open the Dashboard
 
